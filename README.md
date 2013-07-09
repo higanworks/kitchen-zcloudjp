@@ -1,6 +1,6 @@
-# Kitchen::Zcloudjp A Test Kitchen Driver for ZcloudJP (Based on the joyent SmartDataCenter)
+# Kitchen::Zcloudjp A Test Kitchen Driver for Z Cloud
 
-A Test Kitchen Driver for Z Cloud(JP).
+A Test Kitchen Driver for Z Cloud(JP) . Based on the joyent SmartDataCenter.
 
 Current_Status => 'developing'
 
