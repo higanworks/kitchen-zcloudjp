@@ -1,6 +1,15 @@
-# Kitchen::Zcloudjp
+# Kitchen::Zcloudjp A Test Kitchen Driver for ZcloudJP (Based on the joyent SmartDataCenter)
 
-TODO: Write a gem description
+A Test Kitchen Driver for Z Cloud(JP).
+
+Current_Status => 'developing'
+
+This driver was made by reference to the [opscode/kitchen-ec2](https://github.com/opscode/kitchen-ec2/blob/master/README.md).
+
+
+## Requirements
+
+There are no external system requirements for this driver. However you will need access to an [Z Cloud(JP)](http://z-cloud.jp/) account.
 
 ## Installation
 
@@ -16,7 +25,7 @@ Or install it yourself as:
 
     $ gem install kitchen-zcloudjp
 
-## Usage
+## Configuration
 
 TODO: Write usage instructions here
 
@@ -27,3 +36,16 @@ TODO: Write usage instructions here
 3. Commit your changes (`git commit -am 'Add some feature'`)
 4. Push to the branch (`git push origin my-new-feature`)
 5. Create new Pull Request
+
+
+## <a name="authors"></a> Authors
+
+Created and maintained by [Yukihiko Sawanobori][author] (<sawanoboriyu@higanworks.com>)
+
+## <a name="license"></a> License
+
+Apache 2.0 (see [LICENSE][license])
+
+
+[author]:           https://github.com/sawanoboly
+[license]:          https://github.com/higanworks/kitchen-zcloudjp/blob/master/LICENSE
