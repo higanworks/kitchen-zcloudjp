@@ -10,7 +10,7 @@ Gem::Specification.new do |spec|
   spec.email         = ['sawanoboriyu@higanworks.com']
   spec.description   = %q{A Test Kitchen Driver for Zcloudjp}
   spec.summary       = spec.description
-  spec.homepage      = ''
+  spec.homepage      = 'https://github.com/higanworks/kitchen-zcloudjp'
   spec.license       = 'Apache 2.0'
 
   spec.files         = `git ls-files`.split($/)

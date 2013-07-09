@@ -41,24 +41,41 @@ module Kitchen
         sleep 10
         wait_for_sshd(state[:hostname])      ; print "(second reboot)\n"
         sleep 10
-        wait_for_sshd(state[:hostname])      ; print "(ssh ready)\n"
+
+        unless server.os == "SmartOS"
+          info("wait for SSH Connection. It takes few minutes. (Only VirtualMachine)")
+          ssh_args = build_ssh_args(state)
+          sleep 5 until wait_for_sshd_vm(ssh_args)
+          print "(ssh ready)\n"
+        else
+          wait_for_sshd(state[:hostname])      ; print "(ssh ready)\n"
+        end
       end
 
       def destroy(state)
         return if state[:server_id].nil?
-
-        server = client.machine.show(state[:server_id])
+        server = client.machine.show(:id => state[:server_id])
         server.stop unless server.nil?
-        #server.destroy unless server.nil?
+        until client.machine.show(:id => state[:server_id]).state == "stopped"
+          sleep 3
+          info("SmartMachine <#{state[:server_id]}> is stopping, wait for minutes...")
+        end
+        server.delete unless server.nil?
         info("SmartMachine <#{state[:server_id]}> destroyed.")
         state.delete(:server_id)
         state.delete(:hostname)
       end
 
       def converge(state)
+        server = client.machine.show(:id => state[:server_id])
         ssh_args = build_ssh_args(state)
 
-        install_chef_for_smartos(ssh_args)
+        if server.os == "SmartOS"
+          install_chef_for_smartos(ssh_args)
+        else
+          fix_monkey_dataset(ssh_args)
+          install_omnibus(ssh_args) if config[:require_chef_omnibus]
+        end
         prepare_chef_home(ssh_args)
         upload_chef_data(ssh_args)
         run_chef_solo(ssh_args)
@@ -94,6 +111,25 @@ module Kitchen
           fi
         INSTALL
       end
+
+      def fix_monkey_dataset(ssh_args)
+        ssh(ssh_args, <<-__PATCH__.gsub(/^ {10}/, ''))
+          ## set sticky bit for /tmp
+          chmod 01777 /tmp
+        __PATCH__
+      end
+
+      def wait_for_sshd_vm(ssh_args)
+        ssh(ssh_args, <<-__PATCH__.gsub(/^ {10}/, ''))
+          id
+        __PATCH__
+        true
+      rescue => ex
+        debug([ex.class,ex.message].join(': '))
+        logger << "x"
+        false
+      end
+
     end
   end
 end
