@@ -4,7 +4,9 @@ A Test Kitchen Driver for Z Cloud(JP).
 
 Current_Status => 'developing'
 
-This driver was made by reference to the [opscode/kitchen-ec2](https://github.com/opscode/kitchen-ec2/blob/master/README.md).
+This driver uses the [giraffi/zcloudjp](https://github.com/giraffi/zcloudjp) gem to provision and destroy SmartMachines.
+
+This driver was made by reference to the [opscode/kitchen-ec2](https://github.com/opscode/kitchen-ec2/).
 
 
 ## Requirements
