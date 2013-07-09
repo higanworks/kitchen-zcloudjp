@@ -38,7 +38,9 @@ module Kitchen
         server.wait_for { print "."; ready? } ; print "(provision queued)"
         state[:hostname] = server.ips.first
         wait_for_sshd(state[:hostname])      ; print "(first reboot)\n"
-        sleep 5
+        sleep 10
+        wait_for_sshd(state[:hostname])      ; print "(second reboot)\n"
+        sleep 10
         wait_for_sshd(state[:hostname])      ; print "(ssh ready)\n"
       end
 
@@ -53,6 +55,14 @@ module Kitchen
         state.delete(:hostname)
       end
 
+      def converge(state)
+        ssh_args = build_ssh_args(state)
+
+        install_chef_for_smartos(ssh_args)
+        prepare_chef_home(ssh_args)
+        upload_chef_data(ssh_args)
+        run_chef_solo(ssh_args)
+      end
 
       def client
         ::Zcloudjp::Client.new(
@@ -65,6 +75,24 @@ module Kitchen
           :dataset => config[:dataset],
           :package => config[:package]
         )
+      end
+
+      def install_chef_for_smartos(ssh_args)
+        ssh(ssh_args, <<-INSTALL.gsub(/^ {10}/, ''))
+          if [ ! -f /opt/local/bin/chef-client ]; then
+            # pkgin -y install gcc47 gcc47-runtime scmgit-base scmgit-docs gmake ruby193-base ruby193-yajl ruby193-nokogiri ruby193-readline pkg-config
+            pkgin -y install ruby193-base ruby193-yajl ruby193-nokogiri ruby193-readline
+
+          ## for smf cookbook
+            pkgin -y install libxslt
+
+          ## install chef
+            gem update --system
+            gem install --no-ri --no-rdoc ohai
+            gem install --no-ri --no-rdoc chef
+            gem install --no-ri --no-rdoc rb-readline
+          fi
+        INSTALL
       end
     end
   end
