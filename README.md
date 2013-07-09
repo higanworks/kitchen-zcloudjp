@@ -1,5 +1,7 @@
 # Kitchen::Zcloudjp A Test Kitchen Driver for Z Cloud(joyent)
 
+[![Gem Version](https://badge.fury.io/rb/kitchen-zcloudjp.png)](http://badge.fury.io/rb/kitchen-zcloudjp)
+
 A Test Kitchen Driver for Z Cloud(JP).
 
 Current_Status => 'developing'
