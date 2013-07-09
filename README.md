@@ -1,4 +1,4 @@
-# Kitchen::Zcloudjp A Test Kitchen Driver for Z Cloud
+# Kitchen::Zcloudjp A Test Kitchen Driver for Z Cloud(joyent)
 
 A Test Kitchen Driver for Z Cloud(JP).
 
@@ -6,12 +6,10 @@ Current_Status => 'developing'
 
 This driver uses the [giraffi/zcloudjp](https://github.com/giraffi/zcloudjp) gem to provision and destroy SmartMachines.
 
-This driver was made by reference to the [opscode/kitchen-ec2](https://github.com/opscode/kitchen-ec2/).
-
 
 ## Requirements
 
-There are no external system requirements for this driver. However you will need access to an [Z Cloud(JP)](http://z-cloud.jp/) account.
+There are no external system requirements for this driver. However you will need access to a [Z Cloud(JP)](http://z-cloud.jp/) account and api-key.
 
 ## Installation
 
@@ -29,7 +27,60 @@ Or install it yourself as:
 
 ## Configuration
 
-TODO: Write usage instructions here
+
+### api_key
+
+**Required** The Z Cloud(joyent) apikey to use.
+
+You can see an account section at Z Cloud controle panel.
+
+### dataset
+
+The Z Cloud(joyent) dataset image to use.
+
+The default is SmartOS base64 image `sdc:sdc:base64:13.1.0`.
+
+
+### package
+
+The Z Cloud(joyent) smartmachine size to use.
+
+The default is `Small_1GB`.
+
+### require_chef_omnibus
+
+For `VirtualMachine` only option. Install chef from omnibus installer on boot.
+
+The default is `nil`.
+
+### Other Options
+
+This driver based on `Kitchen::Driver::SSHBase`. You can set ssh configurations and more.
+
+
+### `.kitchen.yml` Example
+
+Cookbook test on smartos and ubuntu.
+
+```
+---                                                                                                                                                            
+driver_plugin: zcloudjp
+driver_config:
+  api_key: ZCLOUD_API_KEY
+
+platforms:
+- name: smartos-base64
+- name: ubuntu12
+  driver_config:
+    require_chef_omnibus: true
+    dataset: sdc:jpc:ubuntu-12.04:2.4.1
+
+suites:
+- name: default
+  run_list: ['recipe[dustbox::default]']
+  attributes: {}
+```
+
 
 
 ## Product List (2013-07-09)
