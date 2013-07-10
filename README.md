@@ -3,7 +3,7 @@
 [![Gem Version](https://badge.fury.io/rb/kitchen-zcloudjp.png)](http://badge.fury.io/rb/kitchen-zcloudjp)
 [![Code Climate](https://codeclimate.com/repos/51dccab57e00a45829007ba1/badges/a5103e1bf378c5da5bad/gpa.png)](https://codeclimate.com/repos/51dccab57e00a45829007ba1/feed)
 
-A Test Kitchen Driver for Z Cloud(JP).
+A Test Kitchen Driver for [Z Cloud(JP)](http://z-cloud.jp/).
 
 Current_Status => 'developing'
 
@@ -35,7 +35,7 @@ Or install it yourself as:
 
 **Required** The Z Cloud(joyent) apikey to use.
 
-You can see an account section at Z Cloud controle panel.
+You can see an account section at [Z Cloud control panel](https://my.z-cloud.jp).
 
 ### dataset
 
