@@ -21,8 +21,10 @@ require 'zcloudjp'
 
 require 'benchmark'
 require 'kitchen'
+require 'kitchen/busser'
 
 module Kitchen
+
   module Driver
     class Zcloudjp < Kitchen::Driver::SSHBase
       default_config :dataset, 'sdc:sdc:base64:13.1.0' # base64 image
@@ -49,6 +51,8 @@ module Kitchen
           print "(ssh ready)\n"
         else
           wait_for_sshd(state[:hostname])      ; print "(ssh ready)\n"
+          ## Override ruby_binpath
+          ::Kitchen::Busser.const_set(:DEFAULT_RUBY_BINPATH, '/opt/local/bin')
         end
       end
 
@@ -56,8 +60,9 @@ module Kitchen
         return if state[:server_id].nil?
         server = client.machine.show(:id => state[:server_id])
         server.stop unless server.nil?
-        until client.machine.show(:id => state[:server_id]).state == "stopped"
+        until server.reload.state == "stopped"
           sleep 3
+          debug(server.to_s)
           info("SmartMachine <#{state[:server_id]}> is stopping, wait for minutes...")
         end
         server.delete unless server.nil?
