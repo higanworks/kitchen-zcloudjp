@@ -2,7 +2,7 @@
 
 [![Gem Version](https://badge.fury.io/rb/kitchen-zcloudjp.png)](http://badge.fury.io/rb/kitchen-zcloudjp)
 
-A Test Kitchen Driver for Z Cloud(JP).
+A Test Kitchen Driver for [Z Cloud(JP)](http://z-cloud.jp/).
 
 Current_Status => 'developing'
 
