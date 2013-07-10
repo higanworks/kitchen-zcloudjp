@@ -1,6 +1,7 @@
 # Kitchen::Zcloudjp A Test Kitchen Driver for Z Cloud(joyent)
 
 [![Gem Version](https://badge.fury.io/rb/kitchen-zcloudjp.png)](http://badge.fury.io/rb/kitchen-zcloudjp)
+[![Code Climate](https://codeclimate.com/repos/51dccab57e00a45829007ba1/badges/a5103e1bf378c5da5bad/gpa.png)](https://codeclimate.com/repos/51dccab57e00a45829007ba1/feed)
 
 A Test Kitchen Driver for Z Cloud(JP).
 
