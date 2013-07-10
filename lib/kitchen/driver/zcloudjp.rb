@@ -65,6 +65,7 @@ module Kitchen
           debug(server.to_s)
           info("SmartMachine <#{state[:server_id]}> is stopping, wait for minutes...")
         end
+        sleep 5
         server.delete unless server.nil?
         info("SmartMachine <#{state[:server_id]}> destroyed.")
         state.delete(:server_id)
