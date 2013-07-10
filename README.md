@@ -34,7 +34,7 @@ Or install it yourself as:
 
 **Required** The Z Cloud(joyent) apikey to use.
 
-You can see an account section at Z Cloud controle panel.
+You can see an account section at [Z Cloud control panel](https://my.z-cloud.jp).
 
 ### dataset
 
