@@ -33,7 +33,7 @@ module Kitchen
       required_config :api_key
 
       def create(state)
-        server = create_server
+        server = create_server(state)
         state[:server_id] = server.id
 
         info("SmartMachine <#{state[:server_id]}> created.")
@@ -113,10 +113,11 @@ module Kitchen
         )
       end
 
-      def create_server
+      def create_server(state)
         client.machine.create(
           :dataset => config[:dataset],
-          :package => config[:package]
+          :package => config[:package],
+          :name =>  ['tk', @instance.suite.name.to_s, @instance.platform.name.to_s].join('-').slice(0,20)
         )
       end
 
