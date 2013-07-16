@@ -74,6 +74,24 @@ module Kitchen
         state.delete(:hostname)
       end
 
+      def setup(state)
+        ssh_args = build_ssh_args(state)
+
+        server = client.machine.show(:id => state[:server_id])
+        unless server.os == "SmartOS"
+          ## Override ruby_binpath to default
+          ::Kitchen::Busser.const_set(:DEFAULT_RUBY_BINPATH, '/opt/chef/embedded/bin')
+        else
+          ## Override ruby_binpath
+          ::Kitchen::Busser.const_set(:DEFAULT_RUBY_BINPATH, '/opt/local/bin')
+        end
+
+        if busser_setup_cmd
+          ssh(ssh_args, busser_setup_cmd)
+        end
+      end
+
+
       def converge(state)
         server = client.machine.show(:id => state[:server_id])
         ssh_args = build_ssh_args(state)
