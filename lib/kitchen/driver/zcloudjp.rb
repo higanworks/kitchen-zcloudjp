@@ -49,6 +49,8 @@ module Kitchen
           ssh_args = build_ssh_args(state)
           sleep 5 until wait_for_sshd_vm(ssh_args)
           print "(ssh ready)\n"
+          ## Override ruby_binpath to default
+          ::Kitchen::Busser.const_set(:DEFAULT_RUBY_BINPATH, '/opt/chef/embedded/bin')
         else
           wait_for_sshd(state[:hostname])      ; print "(ssh ready)\n"
           ## Override ruby_binpath
