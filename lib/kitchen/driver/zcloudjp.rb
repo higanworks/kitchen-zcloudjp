@@ -114,11 +114,22 @@ module Kitchen
       end
 
       def create_server(state)
+        debug(JSON.pretty_generate(config))
+        debug("Send as Metadata => #{build_metadata}")
         client.machine.create(
           :dataset => config[:dataset],
           :package => config[:package],
-          :name =>  ['tk', @instance.suite.name.to_s, @instance.platform.name.to_s].join('-').slice(0,20)
+          :name =>  ['tk', @instance.suite.name.to_s, @instance.platform.name.to_s].join('-').slice(0,20),
+          :metadata => build_metadata
         )
+      end
+
+      def build_metadata
+        if config[:metadata_file]
+          JSON.parse(::File.read(config[:metadata_file]))
+        else
+          {}
+        end
       end
 
       def install_chef_for_smartos(ssh_args)

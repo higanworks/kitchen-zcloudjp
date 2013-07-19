@@ -31,26 +31,33 @@ Or install it yourself as:
 ## Configuration
 
 
-### api_key
+### driver_config/api_key
 
 **Required** The Z Cloud(joyent) apikey to use.
 
 You can see an account section at [Z Cloud control panel](https://my.z-cloud.jp).
 
-### dataset
+### platforms/name/driver_config/dataset
 
 The Z Cloud(joyent) dataset image to use.
 
 The default is SmartOS base64 image `sdc:sdc:base64:13.1.0`.
 
 
-### package
+### platforms/name/driver_config/package
 
 The Z Cloud(joyent) smartmachine size to use.
 
 The default is `Small_1GB`.
 
-### require_chef_omnibus
+### platforms/name/driver_config/metadata_file
+
+The Z Cloud(joyent) smartmachine metadata to use.
+
+The default is empty hash.
+
+
+### platforms/name/driver_config/require_chef_omnibus
 
 For `VirtualMachine` only option. Install chef from omnibus installer on boot.
 
@@ -73,6 +80,8 @@ driver_config:
 
 platforms:
 - name: smartos-base64
+  driver_config:
+    metadata_file: foo.json
 - name: ubuntu12
   driver_config:
     require_chef_omnibus: true
@@ -84,6 +93,16 @@ suites:
   attributes: {}
 ```
 
+**Example:foo.json(metadata)**
+
+Notice: values must be string.
+
+```
+{
+  "user-script": "#!/bin/bash\nenv > /tmp/env_out",
+  "your_defined_key" : "some_data"
+}
+```
 
 
 ## Product List (2013-07-09)
