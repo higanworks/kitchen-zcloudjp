@@ -29,6 +29,7 @@ module Kitchen
     class Zcloudjp < Kitchen::Driver::SSHBase
       default_config :dataset, 'sdc:sdc:base64:13.1.0' # base64 image
       default_config :package, 'Small_1GB'
+      default_config :with_gcc, false
 
       required_config :api_key
 
@@ -135,10 +136,15 @@ module Kitchen
       end
 
       def install_chef_for_smartos(ssh_args)
+        if config[:with_gcc]
+          install_pkgs = "gcc47 gcc47-runtime scmgit-base scmgit-docs gmake ruby193-base ruby193-yajl ruby193-nokogiri ruby193-readline pkg-config"
+        else
+          install_pkgs = "scmgit-base scmgit-docs ruby193-base ruby193-yajl ruby193-nokogiri ruby193-readline"
+        end
+
         ssh(ssh_args, <<-INSTALL.gsub(/^ {10}/, ''))
           if [ ! -f /opt/local/bin/chef-client ]; then
-            # pkgin -y install gcc47 gcc47-runtime scmgit-base scmgit-docs gmake ruby193-base ruby193-yajl ruby193-nokogiri ruby193-readline pkg-config
-            pkgin -y install ruby193-base ruby193-yajl ruby193-nokogiri ruby193-readline
+            pkgin -y install #{install_pkgs}
 
           ## for smf cookbook
             pkgin -y install libxslt

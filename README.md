@@ -57,6 +57,12 @@ Metadata are created at provisioning and updated at converging.
 
 The default is empty hash.
 
+### platforms/name/driver_config/with_gcc
+
+install_chef_for_smartos with `gcc, gmake, auto-conf`. Use with require gems which need native extention in cookbooks.
+
+The default is `false`.
+
 
 ### platforms/name/driver_config/require_chef_omnibus
 
