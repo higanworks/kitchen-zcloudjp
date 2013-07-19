@@ -53,6 +53,7 @@ The default is `Small_1GB`.
 ### platforms/name/driver_config/metadata_file
 
 The Z Cloud(joyent) smartmachine metadata to use.
+Metadata are created at provisioning and updated at converging.
 
 The default is empty hash.
 

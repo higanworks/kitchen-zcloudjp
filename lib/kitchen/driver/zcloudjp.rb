@@ -94,6 +94,8 @@ module Kitchen
 
       def converge(state)
         server = client.machine.show(:id => state[:server_id])
+        info("--> Updating metadata...")
+        server.metadata.update(:metadata => build_metadata)
         ssh_args = build_ssh_args(state)
 
         if server.os == "SmartOS"
