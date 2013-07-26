@@ -38,26 +38,29 @@ module Kitchen
         state[:server_id] = server.id
 
         info("SmartMachine <#{state[:server_id]}> created.")
+        debug(server)
         server.wait_for { print "."; ready? } ; print "(provision queued)"
         state[:hostname] = server.ips.first
-        wait_for_sshd(state[:hostname])      ; print "(first reboot)\n"
+        wait_for_sshd_vm(state[:hostname])      ; print "(first reboot)\n"
         sleep 10
-        wait_for_sshd(state[:hostname])      ; print "(second reboot)\n"
+        debug("waiting for second")
+        wait_for_sshd_vm(state[:hostname])      ; print "(second reboot)\n"
         sleep 10
 
         unless server.os == "SmartOS"
           info("wait for SSH Connection. It takes few minutes. (Only VirtualMachine)")
           ssh_args = build_ssh_args(state)
-          sleep 5 until wait_for_sshd_vm(ssh_args)
+          sleep 5 until wait_for_sshd_vm(state[:hostname])
           print "(ssh ready)\n"
           ## Override ruby_binpath to default
           ::Kitchen::Busser.const_set(:DEFAULT_RUBY_BINPATH, '/opt/chef/embedded/bin')
         else
-          wait_for_sshd(state[:hostname])      ; print "(ssh ready)\n"
+          wait_for_sshd_vm(state[:hostname])      ; print "(ssh ready)\n"
           ## Override ruby_binpath
           ::Kitchen::Busser.const_set(:DEFAULT_RUBY_BINPATH, '/opt/local/bin')
         end
       end
+
 
       def destroy(state)
         return if state[:server_id].nil?
@@ -75,9 +78,8 @@ module Kitchen
         state.delete(:hostname)
       end
 
-      def setup(state)
-        ssh_args = build_ssh_args(state)
 
+      def setup(state)
         server = client.machine.show(:id => state[:server_id])
         unless server.os == "SmartOS"
           ## Override ruby_binpath to default
@@ -87,13 +89,16 @@ module Kitchen
           ::Kitchen::Busser.const_set(:DEFAULT_RUBY_BINPATH, '/opt/local/bin')
         end
 
-        if busser_setup_cmd
-          ssh(ssh_args, busser_setup_cmd)
+        Kitchen::SSH.new(*build_ssh_args(state)) do |conn|
+          debug(busser_setup_cmd)
+          run_remote(busser_setup_cmd, conn)
         end
       end
 
 
       def converge(state)
+        provisioner = new_provisioner
+
         server = client.machine.show(:id => state[:server_id])
         info("--> Updating metadata...")
         server.metadata.update(:metadata => build_metadata)
@@ -103,11 +108,18 @@ module Kitchen
           install_chef_for_smartos(ssh_args)
         else
           fix_monkey_dataset(ssh_args)
-          install_omnibus(ssh_args) if config[:require_chef_omnibus]
+          # install_omnibus(ssh_args) if config[:require_chef_omnibus]
         end
-        prepare_chef_home(ssh_args)
-        upload_chef_data(ssh_args)
-        run_chef_solo(ssh_args)
+
+        Kitchen::SSH.new(*build_ssh_args(state)) do |conn|
+          run_remote(provisioner.install_command, conn)
+          run_remote(provisioner.init_command, conn)
+          transfer_path(provisioner.create_sandbox, provisioner.home_path, conn)
+          run_remote(provisioner.prepare_command, conn)
+          run_remote(provisioner.run_command, conn)
+        end
+      ensure
+        provisioner && provisioner.cleanup_sandbox
       end
 
       def client
