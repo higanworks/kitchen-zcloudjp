@@ -41,21 +41,22 @@ module Kitchen
         debug(server)
         server.wait_for { print "."; ready? } ; print "(provision queued)"
         state[:hostname] = server.ips.first
-        wait_for_sshd_vm(state[:hostname])      ; print "(first reboot)\n"
+        ssh_args = build_ssh_args(state)
+        wait_for_sshd_vm(ssh_args)      ; print "(first reboot)\n"
         sleep 10
         debug("waiting for second")
-        wait_for_sshd_vm(state[:hostname])      ; print "(second reboot)\n"
+        wait_for_sshd_vm(ssh_args)      ; print "(second reboot)\n"
         sleep 10
 
         unless server.os == "SmartOS"
           info("wait for SSH Connection. It takes few minutes. (Only VirtualMachine)")
           ssh_args = build_ssh_args(state)
-          sleep 5 until wait_for_sshd_vm(state[:hostname])
+          sleep 5 until wait_for_sshd_vm(ssh_args)
           print "(ssh ready)\n"
           ## Override ruby_binpath to default
           ::Kitchen::Busser.const_set(:DEFAULT_RUBY_BINPATH, '/opt/chef/embedded/bin')
         else
-          wait_for_sshd_vm(state[:hostname])      ; print "(ssh ready)\n"
+          wait_for_sshd_vm(ssh_args)      ; print "(ssh ready)\n"
           ## Override ruby_binpath
           ::Kitchen::Busser.const_set(:DEFAULT_RUBY_BINPATH, '/opt/local/bin')
         end
