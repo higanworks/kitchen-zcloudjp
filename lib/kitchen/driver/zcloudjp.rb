@@ -163,7 +163,7 @@ module Kitchen
             pkgin -y install libxslt
 
           ## install chef
-            gem update --system --no-ri --no-rdoc
+            gem update --system 2.0.6 --no-ri --no-rdoc
             gem install --no-ri --no-rdoc ohai
             gem install --no-ri --no-rdoc chef
             gem install --no-ri --no-rdoc rb-readline
