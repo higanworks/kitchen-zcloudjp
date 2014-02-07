@@ -89,6 +89,9 @@ platforms:
 - name: smartos-base64
   driver_config:
     metadata_file: foo.json
+    require_chef_omnibus: false
+  busser:
+    ruby_bindir: /opt/local/bin
 - name: ubuntu12
   driver_config:
     require_chef_omnibus: true

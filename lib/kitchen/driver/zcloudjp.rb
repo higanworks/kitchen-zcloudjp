@@ -23,13 +23,14 @@ require 'benchmark'
 require 'kitchen'
 require 'kitchen/busser'
 
+
 module Kitchen
 
   module Driver
     class Zcloudjp < Kitchen::Driver::SSHBase
       default_config :dataset, 'sdc:sdc:base64:13.1.0' # base64 image
       default_config :package, 'Small_1GB'
-      default_config :with_gcc, false
+      default_config :with_gcc, true
 
       required_config :api_key
 
@@ -53,12 +54,8 @@ module Kitchen
           ssh_args = build_ssh_args(state)
           sleep 5 until wait_for_sshd_vm(ssh_args)
           print "(ssh ready)\n"
-          ## Override ruby_binpath to default
-          ::Kitchen::Busser.const_set(:DEFAULT_RUBY_BINPATH, '/opt/chef/embedded/bin')
         else
           wait_for_sshd_vm(ssh_args)      ; print "(ssh ready)\n"
-          ## Override ruby_binpath
-          ::Kitchen::Busser.const_set(:DEFAULT_RUBY_BINPATH, '/opt/local/bin')
         end
       end
 
@@ -80,25 +77,9 @@ module Kitchen
       end
 
 
-      def setup(state)
-        server = client.machine.show(:id => state[:server_id])
-        unless server.os == "SmartOS"
-          ## Override ruby_binpath to default
-          ::Kitchen::Busser.const_set(:DEFAULT_RUBY_BINPATH, '/opt/chef/embedded/bin')
-        else
-          ## Override ruby_binpath
-          ::Kitchen::Busser.const_set(:DEFAULT_RUBY_BINPATH, '/opt/local/bin')
-        end
-
-        Kitchen::SSH.new(*build_ssh_args(state)) do |conn|
-          debug(busser_setup_cmd)
-          run_remote(busser_setup_cmd, conn)
-        end
-      end
-
-
       def converge(state)
-        provisioner = new_provisioner
+        provisioner = instance.provisioner
+        sandbox_dirs = Dir.glob("#{provisioner.create_sandbox}/*")
 
         server = client.machine.show(:id => state[:server_id])
         info("--> Updating metadata...")
@@ -115,8 +96,10 @@ module Kitchen
         Kitchen::SSH.new(*build_ssh_args(state)) do |conn|
           run_remote(provisioner.install_command, conn)
           run_remote(provisioner.init_command, conn)
-          transfer_path(provisioner.create_sandbox, provisioner.home_path, conn)
+          transfer_path(sandbox_dirs, provisioner[:root_path], conn)
           run_remote(provisioner.prepare_command, conn)
+          puts provisioner[:test_base_path]
+          puts '-------------'
           run_remote(provisioner.run_command, conn)
         end
       ensure
@@ -189,6 +172,32 @@ module Kitchen
         false
       end
 
+    end
+  end
+end
+
+
+module Kitchen
+  class Busser
+    class_eval do
+      alias :orig_setup_cmd :setup_cmd
+      def setup_cmd
+        @setup_cmd ||= if local_suite_files.empty?
+          nil
+        else
+          setup_cmd  = []
+          setup_cmd << busser_setup_env
+          setup_cmd << "if ! #{sudo}#{config[:ruby_bindir]}/gem list busser -i >/dev/null"
+          setup_cmd << "then #{sudo}#{config[:ruby_bindir]}/gem install #{gem_install_args}"
+          setup_cmd << "fi"
+          setup_cmd << "gem_bindir=`#{config[:ruby_bindir]}/ruby -rrubygems -e \"puts Gem.bindir\"`"
+          setup_cmd << "#{sudo}${gem_bindir}/busser setup"
+          setup_cmd << "#{sudo}sed -e 's@sh@bash@' #{config[:busser_bin]} -i"
+          setup_cmd << "#{sudo}#{config[:busser_bin]} plugin install #{plugins.join(' ')}"
+
+          "bash -c '#{setup_cmd.join('; ')}'"
+        end
+      end
     end
   end
 end
