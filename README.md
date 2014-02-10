@@ -193,7 +193,7 @@ CentOS Large 8         CentOS 6.4    sdc:sdc:centos-6:2.4.1      Large_8GB
 
 ## <a name="authors"></a> Authors
 
-Created and maintained by [Yukihiko Sawanobori][author] (<sawanoboriyu@higanworks.com>)
+Created and maintained by [Sawanobori Yukihiko][author] (<sawanoboriyu@higanworks.com>)
 
 ## <a name="license"></a> License
 
