@@ -28,7 +28,7 @@ module Kitchen
 
   module Driver
     class Zcloudjp < Kitchen::Driver::SSHBase
-      default_config :dataset, 'sdc:sdc:base64:13.1.0' # base64 image
+      default_config :dataset, 'sdc:sdc:base64:13.4.2' # base64 image
       default_config :package, 'Small_1GB'
       default_config :with_gcc, true
 
@@ -79,7 +79,8 @@ module Kitchen
 
       def converge(state)
         provisioner = instance.provisioner
-        sandbox_dirs = Dir.glob("#{provisioner.create_sandbox}/*")
+        provisioner.create_sandbox
+        sandbox_dirs = Dir.glob("#{provisioner.sandbox_path}/*")
 
         server = client.machine.show(:id => state[:server_id])
         info("--> Updating metadata...")
@@ -147,8 +148,8 @@ module Kitchen
 
           ## install chef
             gem update --system --no-ri --no-rdoc
-            gem install --no-ri --no-rdoc ohai
-            gem install --no-ri --no-rdoc chef
+            gem install --no-ri --no-rdoc ohai #{config[:ohai_version] ? '--version ' + %Q{'=  #{config[:ohai_version]}'} : nil }
+            gem install --no-ri --no-rdoc chef #{config[:chef_version] ? '--version ' + %Q{'=  #{config[:chef_version]}'} : nil }
             gem install --no-ri --no-rdoc rb-readline
           fi
         INSTALL
