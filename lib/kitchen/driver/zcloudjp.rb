@@ -148,9 +148,9 @@ module Kitchen
 
           ## install chef
             gem update --system --no-ri --no-rdoc
-            gem install --no-ri --no-rdoc ohai #{config[:ohai_version] ? '--version ' + %Q{'=  #{config[:ohai_version]}'} : nil }
-            gem install --no-ri --no-rdoc chef #{config[:chef_version] ? '--version ' + %Q{'=  #{config[:chef_version]}'} : nil }
-            gem install --no-ri --no-rdoc rb-readline
+            gem install -f --no-ri --no-rdoc ohai #{config[:ohai_version] ? '--version ' + %Q{'=  #{config[:ohai_version]}'} : nil }
+            gem install -f --no-ri --no-rdoc chef #{config[:chef_version] ? '--version ' + %Q{'=  #{config[:chef_version]}'} : nil }
+            gem install -f --no-ri --no-rdoc rb-readline
           fi
         INSTALL
       end
