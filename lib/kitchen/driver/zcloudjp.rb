@@ -82,13 +82,14 @@ module Kitchen
         if server.os == "SmartOS"
           overrides =  instance.provisioner.instance_variable_get(:@config)
           overrides[:require_chef_omnibus] = false
-          config[:ohai_version] = config[:ohai_version] ||= "7.0.4"
-          config[:chef_version] = config[:chef_version] ||= "11.4"
+          overrides[:ohai_version] = config[:ohai_version] ||= "7.0.4"
+          overrides[:chef_version] = config[:chef_version] ||= "11.4"
+          overrides[:chef_solo_path] = config[:chef_solo_path] ||= "/opt/local/bin/chef-solo"
+          overrides[:client_path] = config[:client_path] ||= "/opt/local/bin/chef-client"
           instance.provisioner.instance_variable_set(:@config, overrides)
 
           ## Install chef to smartos
           instance.transport.connection(backcompat_merged_state(state)) do |conn|
-            puts env_cmd(install_chef_for_smartos)
             conn.execute(env_cmd(install_chef_for_smartos))
           end
         else
@@ -96,33 +97,6 @@ module Kitchen
             conn.execute(env_cmd("sudo chmod 01777 /tmp"))
           end
         end
-        #         provisioner = instance.provisioner
-        #         provisioner.create_sandbox
-        #         sandbox_dirs = Dir.glob("#{provisioner.sandbox_path}/*")
-        #
-        #         server = client.machine.show(:id => state[:server_id])
-        #         info("--> Updating metadata...")
-        #         server.metadata.update(:metadata => build_metadata)
-        #         ssh_args = build_ssh_args(state)
-        #
-        #         if server.os == "SmartOS"
-        #           install_chef_for_smartos(ssh_args)
-        #         else
-        #           fix_monkey_dataset(ssh_args)
-        #           # install_omnibus(ssh_args) if config[:require_chef_omnibus]
-        #         end
-        #
-        #         Kitchen::SSH.new(*build_ssh_args(state)) do |conn|
-        #           run_remote(provisioner.install_command, conn)
-        #           run_remote(provisioner.init_command, conn)
-        #           transfer_path(sandbox_dirs, provisioner[:root_path], conn)
-        #           run_remote(provisioner.prepare_command, conn)
-        #           puts provisioner[:test_base_path]
-        #           puts '-------------'
-        #           run_remote(provisioner.run_command, conn)
-        #         end
-        #       ensure
-        #         provisioner && provisioner.cleanup_sandbox
         super
       end
 
@@ -170,23 +144,23 @@ module Kitchen
         "sh -c '#{install_cmd.join("\n")}'"
       end
 
-      def fix_monkey_dataset(ssh_args)
-        ssh(ssh_args, <<-__PATCH__.gsub(/^ {10}/, ''))
-          ## set sticky bit for /tmp
-          chmod 01777 /tmp
-        __PATCH__
-      end
-
-      def wait_for_sshd_vm(ssh_args)
-        ssh(ssh_args, <<-__PATCH__.gsub(/^ {10}/, ''))
-          id
-        __PATCH__
-        true
-      rescue => ex
-        debug([ex.class,ex.message].join(': '))
-        logger << "x"
-        false
-      end
+#       def fix_monkey_dataset(ssh_args)
+#         ssh(ssh_args, <<-__PATCH__.gsub(/^ {10}/, ''))
+#           ## set sticky bit for /tmp
+#           chmod 01777 /tmp
+#         __PATCH__
+#       end
+#
+#       def wait_for_sshd_vm(ssh_args)
+#         ssh(ssh_args, <<-__PATCH__.gsub(/^ {10}/, ''))
+#           id
+#         __PATCH__
+#         true
+#       rescue => ex
+#         debug([ex.class,ex.message].join(': '))
+#         logger << "x"
+#         false
+#       end
 
     end
   end
