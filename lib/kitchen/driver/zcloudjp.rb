@@ -26,6 +26,8 @@ require 'kitchen'
 module Kitchen
   module Driver
     class Zcloudjp < Kitchen::Driver::SSHBase
+      # kitchen_driver_api_version 2
+
       default_config :dataset, 'sdc:sdc:base64:13.4.2' # base64 image
       default_config :package, 'Small_1GB'
       default_config :with_gcc, true
@@ -57,7 +59,6 @@ module Kitchen
         end
       end
 
-
       def destroy(state)
         return if state[:server_id].nil?
         server = client.machine.show(:id => state[:server_id])
@@ -74,19 +75,18 @@ module Kitchen
         state.delete(:hostname)
       end
 
-
       def converge(state)
         server = client.machine.show(:id => state[:server_id])
         info("--> Updating metadata...")
         server.metadata.update(:metadata => build_metadata)
         if server.os == "SmartOS"
-          overrides =  instance.provisioner.instance_variable_get(:@config)
-          overrides[:require_chef_omnibus] = false
-          overrides[:ohai_version] = config[:ohai_version] ||= "7.0.4"
-          overrides[:chef_version] = config[:chef_version] ||= "11.4"
-          overrides[:chef_solo_path] = config[:chef_solo_path] ||= "/opt/local/bin/chef-solo"
-          overrides[:client_path] = config[:client_path] ||= "/opt/local/bin/chef-client"
-          instance.provisioner.instance_variable_set(:@config, overrides)
+          overrides_p =  instance.provisioner.instance_variable_get(:@config)
+          overrides_p[:require_chef_omnibus] = false
+          overrides_p[:ohai_version] = config[:ohai_version] ||= "7.0.4"
+          overrides_p[:chef_version] = config[:chef_version] ||= "11.4"
+          overrides_p[:chef_solo_path] = config[:chef_solo_path] ||= "/opt/local/bin/chef-solo"
+          overrides_p[:client_path] = config[:client_path] ||= "/opt/local/bin/chef-client"
+          instance.provisioner.instance_variable_set(:@config, overrides_p)
 
           ## Install chef to smartos
           instance.transport.connection(backcompat_merged_state(state)) do |conn|
@@ -96,6 +96,16 @@ module Kitchen
           instance.transport.connection(backcompat_merged_state(state)) do |conn|
             conn.execute(env_cmd("sudo chmod 01777 /tmp"))
           end
+        end
+        super
+      end
+
+      def setup(state)
+        server = client.machine.show(:id => state[:server_id])
+        if server.os == "SmartOS"
+          overrides_v =  instance.verifier.instance_variable_get(:@config)
+          overrides_v[:ruby_bindir] = config[:ruby_bindir] ||= "/opt/local/bin"
+          instance.provisioner.instance_variable_set(:@config, overrides_v)
         end
         super
       end
@@ -159,29 +169,3 @@ module Kitchen
     end
   end
 end
-
-
-# module Kitchen
-#   class Busser
-#     class_eval do
-#       alias :orig_setup_cmd :setup_cmd
-#       def setup_cmd
-#         @setup_cmd ||= if local_suite_files.empty?
-#           nil
-#         else
-#           setup_cmd  = []
-#           setup_cmd << busser_setup_env
-#           setup_cmd << "if ! #{sudo}#{config[:ruby_bindir]}/gem list busser -i >/dev/null"
-#           setup_cmd << "then #{sudo}#{config[:ruby_bindir]}/gem install #{gem_install_args}"
-#           setup_cmd << "fi"
-#           setup_cmd << "gem_bindir=`#{config[:ruby_bindir]}/ruby -rrubygems -e \"puts Gem.bindir\"`"
-#           setup_cmd << "#{sudo}${gem_bindir}/busser setup"
-#           setup_cmd << "#{sudo}sed -e 's@sh@bash@' #{config[:busser_bin]} -i"
-#           setup_cmd << "#{sudo}#{config[:busser_bin]} plugin install #{plugins.join(' ')}"
-#
-#           "bash -c '#{setup_cmd.join('; ')}'"
-#         end
-#       end
-#     end
-#   end
-# end
