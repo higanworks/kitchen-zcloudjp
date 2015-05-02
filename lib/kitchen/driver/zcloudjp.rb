@@ -76,33 +76,54 @@ module Kitchen
 
 
       def converge(state)
-        provisioner = instance.provisioner
-        provisioner.create_sandbox
-        sandbox_dirs = Dir.glob("#{provisioner.sandbox_path}/*")
-
         server = client.machine.show(:id => state[:server_id])
         info("--> Updating metadata...")
         server.metadata.update(:metadata => build_metadata)
-        ssh_args = build_ssh_args(state)
-
         if server.os == "SmartOS"
-          install_chef_for_smartos(ssh_args)
-        else
-          fix_monkey_dataset(ssh_args)
-          # install_omnibus(ssh_args) if config[:require_chef_omnibus]
-        end
+          overrides =  instance.provisioner.instance_variable_get(:@config)
+          overrides[:require_chef_omnibus] = false
+          config[:ohai_version] = config[:ohai_version] ||= "7.0.4"
+          config[:chef_version] = config[:chef_version] ||= "11.4"
+          instance.provisioner.instance_variable_set(:@config, overrides)
 
-        Kitchen::SSH.new(*build_ssh_args(state)) do |conn|
-          run_remote(provisioner.install_command, conn)
-          run_remote(provisioner.init_command, conn)
-          transfer_path(sandbox_dirs, provisioner[:root_path], conn)
-          run_remote(provisioner.prepare_command, conn)
-          puts provisioner[:test_base_path]
-          puts '-------------'
-          run_remote(provisioner.run_command, conn)
+          ## Install chef to smartos
+          instance.transport.connection(backcompat_merged_state(state)) do |conn|
+            puts env_cmd(install_chef_for_smartos)
+            conn.execute(env_cmd(install_chef_for_smartos))
+          end
+        else
+          instance.transport.connection(backcompat_merged_state(state)) do |conn|
+            conn.execute(env_cmd("sudo chmod 01777 /tmp"))
+          end
         end
-      ensure
-        provisioner && provisioner.cleanup_sandbox
+        #         provisioner = instance.provisioner
+        #         provisioner.create_sandbox
+        #         sandbox_dirs = Dir.glob("#{provisioner.sandbox_path}/*")
+        #
+        #         server = client.machine.show(:id => state[:server_id])
+        #         info("--> Updating metadata...")
+        #         server.metadata.update(:metadata => build_metadata)
+        #         ssh_args = build_ssh_args(state)
+        #
+        #         if server.os == "SmartOS"
+        #           install_chef_for_smartos(ssh_args)
+        #         else
+        #           fix_monkey_dataset(ssh_args)
+        #           # install_omnibus(ssh_args) if config[:require_chef_omnibus]
+        #         end
+        #
+        #         Kitchen::SSH.new(*build_ssh_args(state)) do |conn|
+        #           run_remote(provisioner.install_command, conn)
+        #           run_remote(provisioner.init_command, conn)
+        #           transfer_path(sandbox_dirs, provisioner[:root_path], conn)
+        #           run_remote(provisioner.prepare_command, conn)
+        #           puts provisioner[:test_base_path]
+        #           puts '-------------'
+        #           run_remote(provisioner.run_command, conn)
+        #         end
+        #       ensure
+        #         provisioner && provisioner.cleanup_sandbox
+        super
       end
 
       def client
@@ -130,27 +151,23 @@ module Kitchen
         end
       end
 
-      def install_chef_for_smartos(ssh_args)
+      def install_chef_for_smartos
         if config[:with_gcc]
           install_pkgs = "gcc47 gcc47-runtime scmgit-base scmgit-docs gmake ruby193-base ruby193-yajl ruby193-nokogiri ruby193-readline pkg-config"
         else
           install_pkgs = "scmgit-base scmgit-docs ruby193-base ruby193-yajl ruby193-nokogiri ruby193-readline"
         end
 
-        ssh(ssh_args, <<-INSTALL.gsub(/^ {10}/, ''))
-          if [ ! -f /opt/local/bin/chef-client ]; then
-            pkgin -y install #{install_pkgs}
-
-          ## for smf cookbook
-            pkgin -y install libxslt
-
-          ## install chef
-            gem update --system --no-ri --no-rdoc
-            gem install -f --no-ri --no-rdoc ohai #{config[:ohai_version] ? '--version ' + %Q{'=  #{config[:ohai_version]}'} : nil }
-            gem install -f --no-ri --no-rdoc chef #{config[:chef_version] ? '--version ' + %Q{'=  #{config[:chef_version]}'} : nil }
-            gem install -f --no-ri --no-rdoc rb-readline
-          fi
-        INSTALL
+        install_cmd = []
+        install_cmd <<  "if [ ! -f /opt/local/bin/chef-client ]; then"
+        install_cmd <<  "   pkgin -y install #{install_pkgs}"
+        install_cmd <<  "   pkgin -y install libxslt"
+        install_cmd <<  "   gem update --system --no-ri --no-rdoc"
+        install_cmd <<  "   gem install -f --no-ri --no-rdoc ohai #{config[:ohai_version] ? %Q{--version "#{config[:ohai_version]}"} : nil }"
+        install_cmd <<  "   gem install -f --no-ri --no-rdoc chef #{config[:chef_version] ? %Q{--version "#{config[:chef_version]}"} : nil }"
+        install_cmd <<  "   gem install -f --no-ri --no-rdoc rb-readline"
+        install_cmd <<  "fi"
+        "sh -c '#{install_cmd.join("\n")}'"
       end
 
       def fix_monkey_dataset(ssh_args)
