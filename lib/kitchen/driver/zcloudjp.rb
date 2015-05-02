@@ -100,6 +100,7 @@ module Kitchen
         super
       end
 
+      private
       def client
         ::Zcloudjp::Client.new(
           :api_key => config[:api_key]
@@ -144,13 +145,6 @@ module Kitchen
         "sh -c '#{install_cmd.join("\n")}'"
       end
 
-#       def fix_monkey_dataset(ssh_args)
-#         ssh(ssh_args, <<-__PATCH__.gsub(/^ {10}/, ''))
-#           ## set sticky bit for /tmp
-#           chmod 01777 /tmp
-#         __PATCH__
-#       end
-#
       def wait_for_sshd_vm(ssh_args)
         ssh(ssh_args, <<-__PATCH__.gsub(/^ {10}/, ''))
           id
