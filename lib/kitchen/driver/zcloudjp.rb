@@ -17,15 +17,13 @@
 # limitations under the License.
 
 
+require 'active_support'
 require 'zcloudjp'
 
 require 'benchmark'
 require 'kitchen'
-require 'kitchen/busser'
-
 
 module Kitchen
-
   module Driver
     class Zcloudjp < Kitchen::Driver::SSHBase
       default_config :dataset, 'sdc:sdc:base64:13.4.2' # base64 image
@@ -178,27 +176,27 @@ module Kitchen
 end
 
 
-module Kitchen
-  class Busser
-    class_eval do
-      alias :orig_setup_cmd :setup_cmd
-      def setup_cmd
-        @setup_cmd ||= if local_suite_files.empty?
-          nil
-        else
-          setup_cmd  = []
-          setup_cmd << busser_setup_env
-          setup_cmd << "if ! #{sudo}#{config[:ruby_bindir]}/gem list busser -i >/dev/null"
-          setup_cmd << "then #{sudo}#{config[:ruby_bindir]}/gem install #{gem_install_args}"
-          setup_cmd << "fi"
-          setup_cmd << "gem_bindir=`#{config[:ruby_bindir]}/ruby -rrubygems -e \"puts Gem.bindir\"`"
-          setup_cmd << "#{sudo}${gem_bindir}/busser setup"
-          setup_cmd << "#{sudo}sed -e 's@sh@bash@' #{config[:busser_bin]} -i"
-          setup_cmd << "#{sudo}#{config[:busser_bin]} plugin install #{plugins.join(' ')}"
-
-          "bash -c '#{setup_cmd.join('; ')}'"
-        end
-      end
-    end
-  end
-end
+# module Kitchen
+#   class Busser
+#     class_eval do
+#       alias :orig_setup_cmd :setup_cmd
+#       def setup_cmd
+#         @setup_cmd ||= if local_suite_files.empty?
+#           nil
+#         else
+#           setup_cmd  = []
+#           setup_cmd << busser_setup_env
+#           setup_cmd << "if ! #{sudo}#{config[:ruby_bindir]}/gem list busser -i >/dev/null"
+#           setup_cmd << "then #{sudo}#{config[:ruby_bindir]}/gem install #{gem_install_args}"
+#           setup_cmd << "fi"
+#           setup_cmd << "gem_bindir=`#{config[:ruby_bindir]}/ruby -rrubygems -e \"puts Gem.bindir\"`"
+#           setup_cmd << "#{sudo}${gem_bindir}/busser setup"
+#           setup_cmd << "#{sudo}sed -e 's@sh@bash@' #{config[:busser_bin]} -i"
+#           setup_cmd << "#{sudo}#{config[:busser_bin]} plugin install #{plugins.join(' ')}"
+#
+#           "bash -c '#{setup_cmd.join('; ')}'"
+#         end
+#       end
+#     end
+#   end
+# end
