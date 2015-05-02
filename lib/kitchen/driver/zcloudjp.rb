@@ -151,16 +151,16 @@ module Kitchen
 #         __PATCH__
 #       end
 #
-#       def wait_for_sshd_vm(ssh_args)
-#         ssh(ssh_args, <<-__PATCH__.gsub(/^ {10}/, ''))
-#           id
-#         __PATCH__
-#         true
-#       rescue => ex
-#         debug([ex.class,ex.message].join(': '))
-#         logger << "x"
-#         false
-#       end
+      def wait_for_sshd_vm(ssh_args)
+        ssh(ssh_args, <<-__PATCH__.gsub(/^ {10}/, ''))
+          id
+        __PATCH__
+        true
+      rescue => ex
+        debug([ex.class,ex.message].join(': '))
+        logger << "x"
+        false
+      end
 
     end
   end
