@@ -21,3 +21,4 @@ tmp
 .kitchen.yml
 foo.json
 cookbooks/
+.envrc

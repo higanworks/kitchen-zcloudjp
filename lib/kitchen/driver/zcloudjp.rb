@@ -17,17 +17,17 @@
 # limitations under the License.
 
 
+require 'active_support'
 require 'zcloudjp'
 
 require 'benchmark'
 require 'kitchen'
-require 'kitchen/busser'
-
 
 module Kitchen
-
   module Driver
     class Zcloudjp < Kitchen::Driver::SSHBase
+      # kitchen_driver_api_version 2
+
       default_config :dataset, 'sdc:sdc:base64:13.4.2' # base64 image
       default_config :package, 'Small_1GB'
       default_config :with_gcc, true
@@ -59,7 +59,6 @@ module Kitchen
         end
       end
 
-
       def destroy(state)
         return if state[:server_id].nil?
         server = client.machine.show(:id => state[:server_id])
@@ -76,37 +75,42 @@ module Kitchen
         state.delete(:hostname)
       end
 
-
       def converge(state)
-        provisioner = instance.provisioner
-        provisioner.create_sandbox
-        sandbox_dirs = Dir.glob("#{provisioner.sandbox_path}/*")
-
         server = client.machine.show(:id => state[:server_id])
         info("--> Updating metadata...")
         server.metadata.update(:metadata => build_metadata)
-        ssh_args = build_ssh_args(state)
-
         if server.os == "SmartOS"
-          install_chef_for_smartos(ssh_args)
-        else
-          fix_monkey_dataset(ssh_args)
-          # install_omnibus(ssh_args) if config[:require_chef_omnibus]
-        end
+          overrides_p =  instance.provisioner.instance_variable_get(:@config)
+          overrides_p[:require_chef_omnibus] = false
+          overrides_p[:ohai_version] = config[:ohai_version] ||= "7.0.4"
+          overrides_p[:chef_version] = config[:chef_version] ||= "11.4"
+          overrides_p[:chef_solo_path] = config[:chef_solo_path] ||= "/opt/local/bin/chef-solo"
+          overrides_p[:client_path] = config[:client_path] ||= "/opt/local/bin/chef-client"
+          instance.provisioner.instance_variable_set(:@config, overrides_p)
 
-        Kitchen::SSH.new(*build_ssh_args(state)) do |conn|
-          run_remote(provisioner.install_command, conn)
-          run_remote(provisioner.init_command, conn)
-          transfer_path(sandbox_dirs, provisioner[:root_path], conn)
-          run_remote(provisioner.prepare_command, conn)
-          puts provisioner[:test_base_path]
-          puts '-------------'
-          run_remote(provisioner.run_command, conn)
+          ## Install chef to smartos
+          instance.transport.connection(backcompat_merged_state(state)) do |conn|
+            conn.execute(env_cmd(install_chef_for_smartos))
+          end
+        else
+          instance.transport.connection(backcompat_merged_state(state)) do |conn|
+            conn.execute(env_cmd("sudo chmod 01777 /tmp"))
+          end
         end
-      ensure
-        provisioner && provisioner.cleanup_sandbox
+        super
       end
 
+      def setup(state)
+        server = client.machine.show(:id => state[:server_id])
+        if server.os == "SmartOS"
+          overrides_v =  instance.verifier.instance_variable_get(:@config)
+          overrides_v[:ruby_bindir] = config[:ruby_bindir] ||= "/opt/local/bin"
+          instance.provisioner.instance_variable_set(:@config, overrides_v)
+        end
+        super
+      end
+
+      private
       def client
         ::Zcloudjp::Client.new(
           :api_key => config[:api_key]
@@ -132,34 +136,23 @@ module Kitchen
         end
       end
 
-      def install_chef_for_smartos(ssh_args)
+      def install_chef_for_smartos
         if config[:with_gcc]
           install_pkgs = "gcc47 gcc47-runtime scmgit-base scmgit-docs gmake ruby193-base ruby193-yajl ruby193-nokogiri ruby193-readline pkg-config"
         else
           install_pkgs = "scmgit-base scmgit-docs ruby193-base ruby193-yajl ruby193-nokogiri ruby193-readline"
         end
 
-        ssh(ssh_args, <<-INSTALL.gsub(/^ {10}/, ''))
-          if [ ! -f /opt/local/bin/chef-client ]; then
-            pkgin -y install #{install_pkgs}
-
-          ## for smf cookbook
-            pkgin -y install libxslt
-
-          ## install chef
-            gem update --system --no-ri --no-rdoc
-            gem install -f --no-ri --no-rdoc ohai #{config[:ohai_version] ? '--version ' + %Q{'=  #{config[:ohai_version]}'} : nil }
-            gem install -f --no-ri --no-rdoc chef #{config[:chef_version] ? '--version ' + %Q{'=  #{config[:chef_version]}'} : nil }
-            gem install -f --no-ri --no-rdoc rb-readline
-          fi
-        INSTALL
-      end
-
-      def fix_monkey_dataset(ssh_args)
-        ssh(ssh_args, <<-__PATCH__.gsub(/^ {10}/, ''))
-          ## set sticky bit for /tmp
-          chmod 01777 /tmp
-        __PATCH__
+        install_cmd = []
+        install_cmd <<  "if [ ! -f /opt/local/bin/chef-client ]; then"
+        install_cmd <<  "   pkgin -y install #{install_pkgs}"
+        install_cmd <<  "   pkgin -y install libxslt"
+        install_cmd <<  "   gem update --system --no-ri --no-rdoc"
+        install_cmd <<  "   gem install -f --no-ri --no-rdoc ohai #{config[:ohai_version] ? %Q{--version "#{config[:ohai_version]}"} : nil }"
+        install_cmd <<  "   gem install -f --no-ri --no-rdoc chef #{config[:chef_version] ? %Q{--version "#{config[:chef_version]}"} : nil }"
+        install_cmd <<  "   gem install -f --no-ri --no-rdoc rb-readline"
+        install_cmd <<  "fi"
+        "sh -c '#{install_cmd.join("\n")}'"
       end
 
       def wait_for_sshd_vm(ssh_args)
@@ -173,32 +166,6 @@ module Kitchen
         false
       end
 
-    end
-  end
-end
-
-
-module Kitchen
-  class Busser
-    class_eval do
-      alias :orig_setup_cmd :setup_cmd
-      def setup_cmd
-        @setup_cmd ||= if local_suite_files.empty?
-          nil
-        else
-          setup_cmd  = []
-          setup_cmd << busser_setup_env
-          setup_cmd << "if ! #{sudo}#{config[:ruby_bindir]}/gem list busser -i >/dev/null"
-          setup_cmd << "then #{sudo}#{config[:ruby_bindir]}/gem install #{gem_install_args}"
-          setup_cmd << "fi"
-          setup_cmd << "gem_bindir=`#{config[:ruby_bindir]}/ruby -rrubygems -e \"puts Gem.bindir\"`"
-          setup_cmd << "#{sudo}${gem_bindir}/busser setup"
-          setup_cmd << "#{sudo}sed -e 's@sh@bash@' #{config[:busser_bin]} -i"
-          setup_cmd << "#{sudo}#{config[:busser_bin]} plugin install #{plugins.join(' ')}"
-
-          "bash -c '#{setup_cmd.join('; ')}'"
-        end
-      end
     end
   end
 end
