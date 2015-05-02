@@ -1,5 +1,9 @@
 # Changelog for kitchen-zcloudjp
 
+## 0.6.0
+
+- update gem test-kitchen to ~> 1.4.0
+
 ## 0.5.0
 
 - update gem test-kitchen to ~> 1.2.0

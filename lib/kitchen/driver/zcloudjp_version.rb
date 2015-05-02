@@ -19,6 +19,6 @@
 module Kitchen
   module Driver
     # Version string for Zcloudjp Test Kitchen driver
-    ZCLOUDJP_VERSION = "0.6.0.dev"
+    ZCLOUDJP_VERSION = "0.6.0"
   end
 end
